@@ -138,7 +138,7 @@ public class CenterSnapHelper extends RecyclerView.OnFlingListener {
         }
     }
 
-    void snapToCenterView(ViewPagerLayoutManager layoutManager,
+    public void snapToCenterView(ViewPagerLayoutManager layoutManager,
                           ViewPagerLayoutManager.OnPageChangeListener listener) {
         final int delta = layoutManager.getOffsetToCenter();
         if (delta != 0) {
