@@ -5,6 +5,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
@@ -365,55 +367,60 @@ public abstract class ViewPagerLayoutManager extends LinearLayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (state.getItemCount() == 0) {
-            removeAndRecycleAllViews(recycler);
-            mOffset = 0;
-            return;
+        try {
+            if (state.getItemCount() == 0) {
+                removeAndRecycleAllViews(recycler);
+                mOffset = 0;
+                return;
+            }
+
+            ensureLayoutState();
+            resolveShouldLayoutReverse();
+
+            //make sure properties are correct while measure more than once
+            View scrap = getMeasureView(recycler, state, 0);
+            if (scrap == null) {
+                removeAndRecycleAllViews(recycler);
+                mOffset = 0;
+                return;
+            }
+
+            measureChildWithMargins(scrap, 0, 0);
+            mDecoratedMeasurement = mOrientationHelper.getDecoratedMeasurement(scrap);
+            mDecoratedMeasurementInOther = mOrientationHelper.getDecoratedMeasurementInOther(scrap);
+            mSpaceMain = (mOrientationHelper.getTotalSpace() - mDecoratedMeasurement) / 2;
+            if (mDistanceToBottom == INVALID_SIZE) {
+                mSpaceInOther = (mOrientationHelper.getTotalSpaceInOther() - mDecoratedMeasurementInOther) / 2;
+            } else {
+                mSpaceInOther = mOrientationHelper.getTotalSpaceInOther() - mDecoratedMeasurementInOther - mDistanceToBottom;
+            }
+
+            mInterval = setInterval();
+            setUp();
+            if (mInterval == 0) {
+                mLeftItems = 1;
+                mRightItems = 1;
+            } else {
+                mLeftItems = (int) Math.abs(minRemoveOffset() / mInterval) + 1;
+                mRightItems = (int) Math.abs(maxRemoveOffset() / mInterval) + 1;
+            }
+
+            if (mPendingSavedState != null) {
+                mShouldReverseLayout = mPendingSavedState.isReverseLayout;
+                mPendingScrollPosition = mPendingSavedState.position;
+                mOffset = mPendingSavedState.offset;
+            }
+
+            if (mPendingScrollPosition != NO_POSITION) {
+                mOffset = mShouldReverseLayout ?
+                        mPendingScrollPosition * -mInterval : mPendingScrollPosition * mInterval;
+            }
+
+            layoutItems(recycler);
+        } catch (IndexOutOfBoundsException e) {
+            Log.e("", "@onLayoutChildren IOOBE.");
         }
 
-        ensureLayoutState();
-        resolveShouldLayoutReverse();
-
-        //make sure properties are correct while measure more than once
-        View scrap = getMeasureView(recycler, state, 0);
-        if (scrap == null) {
-            removeAndRecycleAllViews(recycler);
-            mOffset = 0;
-            return;
-        }
-
-        measureChildWithMargins(scrap, 0, 0);
-        mDecoratedMeasurement = mOrientationHelper.getDecoratedMeasurement(scrap);
-        mDecoratedMeasurementInOther = mOrientationHelper.getDecoratedMeasurementInOther(scrap);
-        mSpaceMain = (mOrientationHelper.getTotalSpace() - mDecoratedMeasurement) / 2;
-        if (mDistanceToBottom == INVALID_SIZE) {
-            mSpaceInOther = (mOrientationHelper.getTotalSpaceInOther() - mDecoratedMeasurementInOther) / 2;
-        } else {
-            mSpaceInOther = mOrientationHelper.getTotalSpaceInOther() - mDecoratedMeasurementInOther - mDistanceToBottom;
-        }
-
-        mInterval = setInterval();
-        setUp();
-        if (mInterval == 0) {
-            mLeftItems = 1;
-            mRightItems = 1;
-        } else {
-            mLeftItems = (int) Math.abs(minRemoveOffset() / mInterval) + 1;
-            mRightItems = (int) Math.abs(maxRemoveOffset() / mInterval) + 1;
-        }
-
-        if (mPendingSavedState != null) {
-            mShouldReverseLayout = mPendingSavedState.isReverseLayout;
-            mPendingScrollPosition = mPendingSavedState.position;
-            mOffset = mPendingSavedState.offset;
-        }
-
-        if (mPendingScrollPosition != NO_POSITION) {
-            mOffset = mShouldReverseLayout ?
-                    mPendingScrollPosition * -mInterval : mPendingScrollPosition * mInterval;
-        }
-
-        layoutItems(recycler);
     }
 
     private View getMeasureView(RecyclerView.Recycler recycler, RecyclerView.State state, int index) {
