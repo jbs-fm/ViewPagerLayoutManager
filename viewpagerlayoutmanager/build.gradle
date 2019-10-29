@@ -3,16 +3,16 @@ import groovy.json.JsonBuilder
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
-        minSdkVersion 11
-        targetSdkVersion 26
+        minSdkVersion 14
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
     buildTypes {
@@ -24,7 +24,7 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.android.support:recyclerview-v7:26.1.0'
+    compileOnly 'androidx.recyclerview:recyclerview:1.0.0'
 }
 
 apply plugin: 'maven'
@@ -35,7 +35,7 @@ def websiteUrl = 'https://github.com/leochuan/ViewPagerLayoutManager'
 def date = new Date()
 def projectName = 'viewpager-layout-manager'
 
-task createPom << {
+task createPom doLast {
     pom {
         project {
             groupId 'rouchuan.viewpagerlayoutmanager'
